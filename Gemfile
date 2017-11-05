@@ -29,6 +29,7 @@ gem 'http'
 gem 'dotenv'
 gem 'sidekiq-failures'
 gem 'csv'
+gem 'soundcloud'
 
 
 # Use jquery as the JavaScript library

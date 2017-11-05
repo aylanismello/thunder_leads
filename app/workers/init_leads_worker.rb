@@ -1,22 +1,17 @@
+require 'soundcloud'
+Dotenv.load
+
 class InitLeadsWorker
   include Sidekiq::Worker
 
-  USER_BUNCH_SIZE = 400_000
-
   def perform(*args)
-    puts "sup"
-    # whenever we start we need to figure out which id to start on!
+    # for now we hard code artists to seed, with their soundcloud handles
+    client = Soundcloud.new(client_id: ENV['SOUNDCLOUD_CLIENT'])
+    seed_handles = ['eugenecam']
 
-    file = CSV.read(Rails.root.join('data', 'leads.csv'))
-
-    if file.last
-      starting_idx = (file.last.last.to_i + 1)
-    else
-      starting_idx = 1
-    end
-
-    (starting_idx .. starting_idx + USER_BUNCH_SIZE).each do |id|
-      ScrapeUserWorker.perform_async(id)
+    seed_handles.each do |handle|
+      user_id = client.get('/users', q: handle).first['id']
+      ScrapeFollowingWorker.perform_async(user_id, 1)
     end
   end
 end
