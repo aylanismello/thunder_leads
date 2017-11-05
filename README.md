@@ -1,24 +1,18 @@
-# README
+# Thunderstone Leads
+#### Generating them leads for the homies at ⚡️stone Radio
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+### Configuration
+Set the following env variables:
 
-Things you may want to cover:
+**SOUNDCLOUD_CLIENT**
 
-* Ruby version
 
-* System dependencies
+### To start
 
-* Configuration
+```bundle install```
 
-* Database creation
+``` bundle exec rake sidekiq:get_leads ```
 
-* Database initialization
+In a separate window, start the sidekiq server
 
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+``` bundle exec sidekiq ```
