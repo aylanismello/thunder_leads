@@ -14,30 +14,38 @@ module ThunderSoundcloud
      followers_count >= 20_000
   end
 
-
-  def self.get_user_bunch
-    # users = HTTP.get("#{USERS_ENDPOINT}").parse
-    (1..1000).each do |id|
-
-      user = "#{USERS_ENDPOINT}/#{id}?client_id=#{ENV['SOUNDCLOUD_CLIENT']}"
-      # check if user has more than 20_0000 followers
-      next unless ThunderSoundcloud.many_followers?(HTTP.get(user).parse['followers_count'])
-
-      user_tracks = HTTP.get("https://api-v2.soundcloud.com/profile/soundcloud:users:#{id}?limit=50&offset=0&client_id=#{ENV['SOUNDCLOUD_CLIENT']}").parse
-      track_reposts = user_tracks['collection'].select{ |track| track['type'] == 'track-repost' }
-
-      next unless track_reposts.any? && ThunderSoundcloud::recent?(track_reposts.first['created_at'])
-      byebug
-      # newest tracks are at the top
-      # now check if there are any tracks at all from the last 30 days
-      # check first track in list, cause it's the newest
-      # unless tracks.first
-      byebug
-
-    end
+  def self.format_user(user)
     # byebug
+    user
+  end
 
-    # puts HTTP.get("https://api.soundcloud.com/users/?client_id=886e9e309f4ba95bafe4624a0bcd1251&followers_count=20000").parse
+  def self.write_to_csv(user)
+    country = user['country'] || 'unknown_country'
+    city = user['city'].empty? ? 'unknown_city' : user['city']
+    
+    CSV.open( Rails.root.join('data', 'leads.csv'), 'a' ) do |writer|
+      writer << [user['username'], user['permalink_url'], user['followers_count'], user['reposts_count'], country, city, user['id']]
+    end
+    # ThunderSoundcloud::format_user(user)
+  end
+
+  def self.attempt_user(id)
+    user = HTTP.get("#{USERS_ENDPOINT}/#{id}?client_id=#{ENV['SOUNDCLOUD_CLIENT']}").parse
+    # check if user has more than 20_0000 followers
+    return unless user['errors'].nil? && ThunderSoundcloud.many_followers?(user['followers_count'])
+
+    user_tracks = HTTP.get("https://api-v2.soundcloud.com/profile/soundcloud:users:#{id}?limit=50&offset=0&client_id=#{ENV['SOUNDCLOUD_CLIENT']}").parse
+    track_reposts = user_tracks['collection'].select{ |track| track['type'] == 'track-repost' }
+
+    # newest tracks are at the top
+    # now check if there are any tracks at all from the last 30 days
+    # check first track in list, cause it's the newest
+    # unless tracks.first
+    return unless track_reposts.any? && ThunderSoundcloud::recent?(track_reposts.first['created_at'])
+
+    ThunderSoundcloud::write_to_csv(user)
+
+
   end
 
 end
